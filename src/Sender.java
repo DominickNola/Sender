@@ -106,20 +106,6 @@ public class Sender{
             }
             System.out.println();
 
-            //byte[] mess_hash_bytes = message_hash.getBytes();
-            //System.out.println(message_hash);
-            //System.out.println(mess_hash_bytes[1]);
-
-//            PrintWriter out2 = new PrintWriter("message.ds-msg");
-//            for (int k=0, j=0; k<mess_hash_bytes.length; k++, j++) {
-//                System.out.format("%2X ", (mess_hash_bytes[k])) ;
-//                // save value to message.dd file
-//                out2.format("%2X ", (mess_hash_bytes[k]));
-//                if (j >= 15) {
-//                    System.out.println("");
-//                    j=-1;
-//                }
-//            }
             return sb.toString();
         } finally {
             br.close();
