@@ -41,9 +41,24 @@ public class Sender{
                 j = -1;
             }
         }
+
+        // read from the original message message.txt and append to message.ds-msg
+        try(BufferedReader br = new BufferedReader(new FileReader("message.txt"))) {
+            StringBuilder sb = new StringBuilder();
+            String line = br.readLine();
+
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+            String orig_message = sb.toString();
+            out.print(orig_message);
+
+        }
+
         System.out.println("");
         out.close(); // IT WONT SEND THE DATA WITHOUT THIS LINE
-
     }
 
     public static String hashValue(String message_file) throws Exception {
