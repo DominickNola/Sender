@@ -68,7 +68,7 @@ public class Sender{
         }
         System.out.println("\n");
 
-        System.out.println("(RSA Cipertext || Message) from message.ds-msg: ");
+        System.out.println("(RSA Cipertext || Message) string from message.ds-msg: ");
         readAFile("message.ds-msg");
 
         byte[] AEScipher = encrypt();
