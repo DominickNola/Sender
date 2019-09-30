@@ -59,7 +59,7 @@ public class Sender{
         System.out.println("");
         out.close(); // IT WONT SEND THE DATA WITHOUT THIS LINE
 
-        System.out.println("Symmetric.key: ");
+        System.out.println("String from Symmetric.key: ");
         readFile("symmetric.key");
         System.out.println("128-bit UTF-8 encoding of Symmetric.key: ");
         byte[] symmetricBytes = symmetricKey.getBytes("UTF8");
