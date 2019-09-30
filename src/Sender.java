@@ -61,7 +61,7 @@ public class Sender{
         byte[] hash = md.digest();
 
         PrintWriter out = new PrintWriter("message.dd");
-        System.out.println("SHA256(M) in Hexadecimal bytes:");
+        System.out.println("SHA256(M) in Hexadecimal bytes, output to message.dd:");
         for (int k = 0, j = 0; k < hash.length; k++, j++) {
             System.out.format("%02X ", (hash[k])) ;
             // save value to message.dd file
@@ -100,6 +100,7 @@ public class Sender{
                 hash_byte[i] = (byte)j;
             }
 
+            System.out.println("Read message.dd as a string and store as byte[] hash_byte: ");
             for (int i = 0; i < hash_byte.length; i++) {
                 System.out.format("%02X ", (hash_byte[i]));
             }
