@@ -2,12 +2,13 @@ import javax.crypto.Cipher;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.security.*;
 import java.io.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-
+import java.security.spec.RSAPrivateKeySpec;
 
 
 public class Sender{
@@ -16,22 +17,19 @@ public class Sender{
     public static byte[] hash_byte;
 
     public static void main(String[] args) throws Exception {
-
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         SecureRandom Xrandom = new SecureRandom();
-        KeyPairGenerator Xgenerator = KeyPairGenerator.getInstance("RSA");
-        Xgenerator.initialize(1024, Xrandom);  //128: key size in bits
-        KeyPair Xpair = Xgenerator.generateKeyPair();
-        Key XprivKey = Xpair.getPrivate(); // gets key
-        cipher.init(Cipher.ENCRYPT_MODE, XprivKey, Xrandom);
-        System.out.println();
 
-        hashValue("/Users/dominicklicciardi/Documents/Security_Projects/Project1/Sender/message.txt"); // Number 4
-        RSA("message.dd"); // Number 5
-
-        byte[] cipherText = cipher.doFinal(hash_byte);
+        // Number 4
+        hashValue("/Users/dominicklicciardi/Documents/Security_Projects/Project1/Sender/message.txt");
+        // Number 5
+        RSA("message.dd");
+        PrivateKey XprivKey2 = readPrivKeyFromFile("XPrivate.key");
+        cipher.init(Cipher.ENCRYPT_MODE, XprivKey2, Xrandom);
 
         PrintWriter out = new PrintWriter("message.ds-msg");
+
+        byte[] cipherText = cipher.doFinal(hash_byte);
         System.out.println("\nRSA Encryption cipherText: block size = " + cipher.getBlockSize());
         for (int i = 0, j = 0; i < cipherText.length; i++, j++) {
             System.out.format("%02X ", (cipherText[i]));
@@ -46,7 +44,6 @@ public class Sender{
         try(BufferedReader br = new BufferedReader(new FileReader("message.txt"))) {
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
-
             while (line != null) {
                 sb.append(line);
                 sb.append(System.lineSeparator());
@@ -54,7 +51,6 @@ public class Sender{
             }
             String orig_message = sb.toString();
             out.print(orig_message);
-
         }
 
         System.out.println("");
@@ -93,6 +89,7 @@ public class Sender{
     }
 
     public static String RSA(String fileName) throws IOException {
+
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
             StringBuilder sb = new StringBuilder();
@@ -120,10 +117,40 @@ public class Sender{
                 System.out.format("%02X ", (hash_byte[i]));
             }
             System.out.println();
+            System.out.println();
 
             return sb.toString();
         } finally {
             br.close();
+        }
+    }
+
+    //read key parameters from a file and generate the private key
+    public static PrivateKey readPrivKeyFromFile(String keyFileName)
+            throws IOException {
+
+        InputStream in =
+                //Sender.class.getResourceAsStream(keyFileName);
+                new FileInputStream("XPrivate.key");
+        ObjectInputStream oin =
+                new ObjectInputStream(new BufferedInputStream(in));
+
+        try {
+            BigInteger m = (BigInteger) oin.readObject();
+            BigInteger e = (BigInteger) oin.readObject();
+
+            System.out.println("Read from " + keyFileName + ": modulus = " +
+                    m.toString() + ", exponent = " + e.toString() + "\n");
+
+            RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(m, e);
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            PrivateKey key = factory.generatePrivate(keySpec);
+
+            return key;
+        } catch (Exception e) {
+            throw new RuntimeException("Spurious serialisation error", e);
+        } finally {
+            oin.close();
         }
     }
 
