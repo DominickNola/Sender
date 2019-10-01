@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 
 
 public class Sender{
@@ -28,7 +29,11 @@ public class Sender{
         SHA256("message.txt");
         // Number 5, String from message.dd to byte[] for RSA/Kx- Encryption
         StringToByte("message.dd");
+        PublicKey XpubKey2 = readPubKeyFromFile("XPublic.key");
         PrivateKey XprivKey2 = readPrivKeyFromFile("XPrivate.key");
+
+        PublicKey YpubKey2 = readPubKeyFromFile("YPublic.key");
+        PrivateKey YprivKey2 = readPrivKeyFromFile("YPrivate.key");
         // initialize SHA Encryption using Private Key.
         cipher.init(Cipher.ENCRYPT_MODE, XprivKey2, Xrandom);
 
@@ -162,8 +167,7 @@ public class Sender{
             throws IOException {
 
         InputStream in =
-                //Sender.class.getResourceAsStream(keyFileName);
-                new FileInputStream("XPrivate.key");
+                new FileInputStream(keyFileName);
         ObjectInputStream oin =
                 new ObjectInputStream(new BufferedInputStream(in));
 
@@ -231,6 +235,35 @@ public class Sender{
             return sb.toString();
         } finally {
             br.close();
+        }
+    }
+
+    //read key parameters from a file and generate the public key
+    public static PublicKey readPubKeyFromFile(String keyFileName)
+            throws IOException {
+
+        InputStream in =
+                //Sender.class.getResourceAsStream(keyFileName);
+                new FileInputStream(keyFileName);
+        ObjectInputStream oin =
+                new ObjectInputStream(new BufferedInputStream(in));
+
+        try {
+            BigInteger m = (BigInteger) oin.readObject();
+            BigInteger e = (BigInteger) oin.readObject();
+
+            System.out.println("Read from " + keyFileName + ": modulus = " +
+                    m.toString() + ", exponent = " + e.toString() + "\n");
+
+            RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            PublicKey key = factory.generatePublic(keySpec);
+
+            return key;
+        } catch (Exception e) {
+            throw new RuntimeException("Spurious serialisation error", e);
+        } finally {
+            oin.close();
         }
     }
 
