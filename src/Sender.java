@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.Arrays;
 
 
 public class Sender{
@@ -20,6 +21,7 @@ public class Sender{
     public static byte[] hash_byte;
     public static String symmetricKey;
     public static String plaintext;
+    public static byte[] trimetricBytes;
 
     public static void main(String[] args) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -29,9 +31,9 @@ public class Sender{
         SHA256("message.txt");
         // Number 5, String from message.dd to byte[] for RSA/Kx- Encryption
         StringToByte("message.dd");
+        // Read Key Kx- to use encryption.
         PublicKey XpubKey2 = readPubKeyFromFile("XPublic.key");
         PrivateKey XprivKey2 = readPrivKeyFromFile("XPrivate.key");
-
         PublicKey YpubKey2 = readPubKeyFromFile("YPublic.key");
         PrivateKey YprivKey2 = readPrivKeyFromFile("YPrivate.key");
         // initialize SHA Encryption using Private Key.
@@ -67,8 +69,9 @@ public class Sender{
         System.out.println("String from Symmetric.key: ");
         readFile("symmetric.key");
         System.out.println("128-bit UTF-8 encoding of Symmetric.key: ");
-        byte[] symmetricBytes = symmetricKey.getBytes("UTF8");
-        for (byte x: symmetricBytes) {
+        byte[] symmetricBytes = symmetricKey.getBytes("UTF-8");
+        trimetricBytes = trim(symmetricBytes);
+        for (byte x: trimetricBytes) {
             System.out.print(x + " ");
         }
         System.out.println("\n");
@@ -214,7 +217,7 @@ public class Sender{
         //Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
         //Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding", "SunJCE");
         Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding", "SunJCE");
-        SecretKeySpec key = new SecretKeySpec(symmetricKey.getBytes("UTF-8"), "AES");
+        SecretKeySpec key = new SecretKeySpec(trimetricBytes, "AES");
         cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
         return cipher.doFinal(plaintext.getBytes("UTF-8"));
     }
@@ -266,5 +269,17 @@ public class Sender{
             oin.close();
         }
     }
+
+    static byte[] trim(byte[] bytes)
+    {
+        int i = bytes.length - 1;
+        while (i >= 0 && bytes[i] == 0)
+        {
+            --i;
+        }
+
+        return Arrays.copyOf(bytes, i );
+    }
+
 
 }
