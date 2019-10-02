@@ -20,7 +20,7 @@ public class Sender{
     public static String message_hash;
     public static byte[] hash_byte;
     public static String symmetricKey;
-    public static String plaintext;
+    public static String ds_msg;
     public static byte[] trimetricBytes;
 
     public static void main(String[] args) throws Exception {
@@ -76,7 +76,7 @@ public class Sender{
         }
         System.out.println("\n");
 
-        System.out.println("(RSA Cipertext || Message) string from message.ds-msg: ");
+        System.out.println("Read (RSA Cipertext || Message) string from message.ds-msg: ");
         readAFile("message.ds-msg");
 
         byte[] AEScipher = encrypt();
@@ -219,7 +219,7 @@ public class Sender{
         Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding", "SunJCE");
         SecretKeySpec key = new SecretKeySpec(trimetricBytes, "AES");
         cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
-        return cipher.doFinal(plaintext.getBytes("UTF-8"));
+        return cipher.doFinal(ds_msg.getBytes("UTF-8"));
     }
 
     public static String readAFile(String fileName) throws IOException {
@@ -233,8 +233,8 @@ public class Sender{
                 sb.append("\n");
                 line = br.readLine();
             }
-            plaintext = sb.toString();
-            System.out.println(plaintext);
+            ds_msg = sb.toString();
+            System.out.println(ds_msg);
             return sb.toString();
         } finally {
             br.close();
@@ -280,6 +280,4 @@ public class Sender{
 
         return Arrays.copyOf(bytes, i );
     }
-
-
 }
