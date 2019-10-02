@@ -22,78 +22,27 @@ public class Sender{
     public static String symmetricKey;
     public static String ds_msg;
     public static byte[] trimetricBytes;
+    public static PrivateKey XprivKey2;
 
     public static void main(String[] args) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        SecureRandom Xrandom = new SecureRandom();
 
+        // **** SHA/RSA ****
         // Number 4, SHA256(Message.txt)
         SHA256("message.txt");
         // Number 5, String from message.dd to byte[] for RSA/Kx- Encryption
         StringToByte("message.dd");
-        // Read Key Kx- to use encryption.
-        PublicKey XpubKey2 = readPubKeyFromFile("XPublic.key");
-        PrivateKey XprivKey2 = readPrivKeyFromFile("XPrivate.key");
-        PublicKey YpubKey2 = readPubKeyFromFile("YPublic.key");
-        PrivateKey YprivKey2 = readPrivKeyFromFile("YPrivate.key");
-        // initialize SHA Encryption using Private Key.
-        cipher.init(Cipher.ENCRYPT_MODE, XprivKey2, Xrandom);
+        // Number 5, RSA Encryption using Kx- Key.
+        rsa_encrypt();
 
-        PrintWriter out = new PrintWriter("message.ds-msg");
-        // create Final Encryption using input
-        byte[] cipherText = cipher.doFinal(hash_byte);
-        System.out.println("RSA Encryption cipherText: block size = " + cipher.getBlockSize());
-        for (int i = 0, j = 0; i < cipherText.length; i++, j++) {
-            System.out.format("%02X ", (cipherText[i]));
-            out.format("%02X ", (cipherText[i]));
-            if (j >= 15) {
-                System.out.println("");
-                j = -1;
-            }
-        }
-        // read from the original message message.txt and append to message.ds-msg
-        try(BufferedReader br = new BufferedReader(new FileReader("message.txt"))) {
-            StringBuilder sb = new StringBuilder();
-            String line = br.readLine();
-            while (line != null) {
-                sb.append(line);
-                sb.append(System.lineSeparator());
-                line = br.readLine();
-            }
-            String orig_message = sb.toString();
-            out.print(orig_message);
-        }
-        System.out.println("");
-        out.close(); // IT WONT SEND THE DATA WITHOUT THIS LINE
-
-        System.out.println("String from Symmetric.key: ");
-        readFile("symmetric.key");
-        System.out.println("128-bit UTF-8 encoding of Symmetric.key: ");
-        byte[] symmetricBytes = symmetricKey.getBytes("UTF-8");
-        trimetricBytes = trim(symmetricBytes);
-        for (byte x: trimetricBytes) {
-            System.out.print(x + " ");
-        }
-        System.out.println("\n");
-
-        System.out.println("Read (RSA Cipertext || Message) string from message.ds-msg: ");
-        readAFile("message.ds-msg");
-
-        byte[] AEScipher = encrypt();
-
-        System.out.print("AEScipher:  \n");
-        for (int i=0, j = 0; i < AEScipher.length; i++, j++) {
-            System.out.format("%2X ", AEScipher[i]);
-            if (j >= 15) {
-                System.out.println("");
-                j = -1;
-            }
-
-        }
+        // **** AES ****
+        key_to_UTF8("symmetric.key");
+        read_ds_msg("message.ds-msg");
+        aes_encrypt();
 
     }
 
     public static String SHA256(String message_file) throws Exception {
+
         BufferedInputStream file = new BufferedInputStream(new FileInputStream(message_file));
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         DigestInputStream in = new DigestInputStream(file, md);
@@ -106,7 +55,6 @@ public class Sender{
         in.close();
 
         byte[] hash = md.digest();
-
         PrintWriter out = new PrintWriter("message.dd");
         System.out.println("SHA256(M) in Hexadecimal bytes, output to message.dd:");
         for (int k = 0, j = 0; k < hash.length; k++, j++) {
@@ -161,10 +109,6 @@ public class Sender{
         }
     }
 
-    public static void StringToUTF8(String fileName) {
-
-    }
-
     //read key parameters from a file and generate the private key
     public static PrivateKey readPrivKeyFromFile(String keyFileName)
             throws IOException {
@@ -193,7 +137,8 @@ public class Sender{
         }
     }
 
-    public static String readFile(String fileName) throws IOException {
+    public static String key_to_UTF8(String fileName) throws IOException {
+        System.out.println("Symmetric.key to UTF-8 for AES En(): ");
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
             StringBuilder sb = new StringBuilder();
@@ -209,20 +154,75 @@ public class Sender{
             return sb.toString();
         } finally {
             br.close();
+            System.out.println("128-bit UTF-8 encoding of Symmetric.key for AES: ");
+            byte[] symmetricBytes = symmetricKey.getBytes("UTF-8");
+            trimetricBytes = trim(symmetricBytes);
+            for (byte x: trimetricBytes) {
+                System.out.print(x + " ");
+            }
+            System.out.println("\n");
         }
     }
 
-    public static byte[] encrypt() throws Exception {
+    public static byte[] aes_encrypt() throws Exception {
         String IV = "AAAAAAAAAAAAAAAA";
         //Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
         //Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding", "SunJCE");
         Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding", "SunJCE");
         SecretKeySpec key = new SecretKeySpec(trimetricBytes, "AES");
         cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
+        PrintWriter aes_out = new PrintWriter("message.aescipher");
+        byte[] AEScipher = cipher.doFinal(ds_msg.getBytes("UTF-8"));
+        System.out.print("AEScipher:  \n");
+        for (int i = 0, j = 0; i < AEScipher.length; i++, j++) {
+            System.out.format("%02X ", AEScipher[i]);
+            aes_out.format("%02X ", AEScipher[i]);
+            if (j >= 15) {
+                System.out.println("");
+                j = -1;
+            }
+        }
+        aes_out.close();
         return cipher.doFinal(ds_msg.getBytes("UTF-8"));
     }
 
-    public static String readAFile(String fileName) throws IOException {
+    public static byte[] rsa_encrypt() throws Exception {
+
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        SecureRandom Xrandom = new SecureRandom();
+        XprivKey2 = readPrivKeyFromFile("XPrivate.key");
+        cipher.init(Cipher.ENCRYPT_MODE, XprivKey2, Xrandom);
+        PrintWriter out = new PrintWriter("message.ds-msg");
+        byte[] cipherText = cipher.doFinal(hash_byte);
+        System.out.println("RSA Encryption cipherText: block size = " + cipher.getBlockSize());
+        for (int i = 0, j = 0; i < cipherText.length; i++, j++) {
+            System.out.format("%02X ", (cipherText[i]));
+            out.format("%02X ", (cipherText[i]));
+            if (j >= 15) {
+                System.out.println("");
+                j = -1;
+            }
+        }
+        // read from the original message message.txt and append to message.ds-msg
+        try(BufferedReader br = new BufferedReader(new FileReader("message.txt"))) {
+            StringBuilder sb = new StringBuilder();
+            String line = br.readLine();
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+            String orig_message = sb.toString();
+            out.print(orig_message);
+        }
+        System.out.println("");
+        out.close(); // IT WONT SEND THE DATA WITHOUT THIS LINE
+
+        return cipher.doFinal(hash_byte);
+    }
+
+    public static String read_ds_msg(String fileName) throws IOException {
+        System.out.println("Read (RSA Cipertext || Message) string from message.ds-msg for AES Encryption: ");
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
             StringBuilder sb = new StringBuilder();
