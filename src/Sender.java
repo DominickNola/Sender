@@ -21,16 +21,15 @@ public class Sender{
     public static byte[] hash_byte;
     public static String symmetricKey;
     public static String ds_msg;
-    public static byte[] trimetricBytes;
+    public static byte[] trimetricBytes; // trimmed symmetricBytes
     public static PrivateKey XprivKey2;
 
     public static void main(String[] args) throws Exception {
 
         // **** SHA/RSA ****
-        // Number 4, SHA256(Message.txt)
-        SHA256("message.txt");
+        sha_256("message.txt");
         // Number 5, String from message.dd to byte[] for RSA/Kx- Encryption
-        StringToByte("message.dd");
+        string_to_byte("message.dd");
         // Number 5, RSA Encryption using Kx- Key.
         rsa_encrypt();
 
@@ -41,7 +40,7 @@ public class Sender{
 
     }
 
-    public static String SHA256(String message_file) throws Exception {
+    public static String sha_256(String message_file) throws Exception {
 
         BufferedInputStream file = new BufferedInputStream(new FileInputStream(message_file));
         MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -72,7 +71,7 @@ public class Sender{
         return new String(hash);
     }
 
-    public static String StringToByte(String fileName) throws IOException {
+    public static String string_to_byte(String fileName) throws IOException {
 
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
@@ -110,8 +109,7 @@ public class Sender{
     }
 
     //read key parameters from a file and generate the private key
-    public static PrivateKey readPrivKeyFromFile(String keyFileName)
-            throws IOException {
+    public static PrivateKey readPrivKeyFromFile(String keyFileName) throws IOException {
 
         InputStream in =
                 new FileInputStream(keyFileName);
@@ -138,7 +136,7 @@ public class Sender{
     }
 
     public static String key_to_UTF8(String fileName) throws IOException {
-        System.out.println("Symmetric.key to UTF-8 for AES En(): ");
+        System.out.println("Symmetric.key string for AES En(): ");
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
             StringBuilder sb = new StringBuilder();
@@ -150,7 +148,7 @@ public class Sender{
                 line = br.readLine();
             }
             symmetricKey = sb.toString();
-            System.out.println(symmetricKey);
+            System.out.print(symmetricKey);
             return sb.toString();
         } finally {
             br.close();
@@ -165,6 +163,7 @@ public class Sender{
     }
 
     public static byte[] aes_encrypt() throws Exception {
+
         String IV = "AAAAAAAAAAAAAAAA";
         //Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
         //Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding", "SunJCE");
@@ -222,6 +221,7 @@ public class Sender{
     }
 
     public static String read_ds_msg(String fileName) throws IOException {
+
         System.out.println("Read (RSA Cipertext || Message) string from message.ds-msg for AES Encryption: ");
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
@@ -242,15 +242,13 @@ public class Sender{
     }
 
     //read key parameters from a file and generate the public key
-    public static PublicKey readPubKeyFromFile(String keyFileName)
-            throws IOException {
+    public static PublicKey readPubKeyFromFile(String keyFileName) throws IOException {
 
         InputStream in =
                 //Sender.class.getResourceAsStream(keyFileName);
                 new FileInputStream(keyFileName);
         ObjectInputStream oin =
                 new ObjectInputStream(new BufferedInputStream(in));
-
         try {
             BigInteger m = (BigInteger) oin.readObject();
             BigInteger e = (BigInteger) oin.readObject();
@@ -270,14 +268,12 @@ public class Sender{
         }
     }
 
-    static byte[] trim(byte[] bytes)
-    {
+    static byte[] trim(byte[] bytes) {
         int i = bytes.length - 1;
         while (i >= 0 && bytes[i] == 0)
         {
             --i;
         }
-
         return Arrays.copyOf(bytes, i );
     }
 }
