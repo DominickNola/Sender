@@ -21,8 +21,8 @@ public class Sender{
     public static byte[] hash_byte;
     public static String symmetricKey;
     public static String ds_msg;
-    public static byte[] trimetricBytes; // trimmed symmetricBytes
     public static PrivateKey XprivKey2;
+    public static byte[] symmetricBytes;
 
     public static void main(String[] args) throws Exception {
 
@@ -153,9 +153,9 @@ public class Sender{
         } finally {
             br.close();
             System.out.println("128-bit UTF-8 encoding of Symmetric.key for AES: ");
-            byte[] symmetricBytes = symmetricKey.getBytes("UTF-8");
-            trimetricBytes = trim(symmetricBytes);
-            for (byte x: trimetricBytes) {
+            symmetricBytes = symmetricKey.getBytes("UTF-8");
+            symmetricBytes = trim(symmetricBytes);
+            for (byte x: symmetricBytes) {
                 System.out.print(x + " ");
             }
             System.out.println("\n");
@@ -164,11 +164,11 @@ public class Sender{
 
     public static byte[] aes_encrypt() throws Exception {
 
-        String IV = "AAAAAAAAAAAAAAAA";
+        String IV = "AAAAAAAAAAAAAAAA"; // do not need for AES/ECB/PKCS5Padding mode
         //Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
         //Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding", "SunJCE");
         Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding", "SunJCE");
-        SecretKeySpec key = new SecretKeySpec(trimetricBytes, "AES");
+        SecretKeySpec key = new SecretKeySpec(symmetricBytes, "AES");
         cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
         PrintWriter aes_out = new PrintWriter("message.aescipher");
         byte[] AEScipher = cipher.doFinal(ds_msg.getBytes("UTF-8"));
@@ -181,6 +181,7 @@ public class Sender{
                 j = -1;
             }
         }
+        System.out.println();
         aes_out.close();
         return cipher.doFinal(ds_msg.getBytes("UTF-8"));
     }
