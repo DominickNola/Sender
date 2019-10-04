@@ -15,32 +15,33 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
 
-public class Sender{
+public class Sender {
+
     private static int BUFFER_SIZE = 32 * 1024;
-    public static String message_hash;
-    public static byte[] hash_byte;
+    public static String messageHash;
+    public static byte[] hashByte;
     public static String symmetricKey;
-    public static String ds_msg;
-    public static PrivateKey XprivKey2;
     public static byte[] symmetricBytes;
+    public static String dsMsg;
+    public static PrivateKey XprivKey2;
 
     public static void main(String[] args) throws Exception {
 
         // **** SHA/RSA ****
-        sha_256("message.txt");
+        sha256("message.txt");
         // Number 5, String from message.dd to byte[] for RSA/Kx- Encryption
-        string_to_byte("message.dd");
+        stringToByte("message.dd");
         // Number 5, RSA Encryption using Kx- Key.
-        rsa_encrypt();
+        rsaEncrypt();
 
         // **** AES ****
-        key_to_UTF8("symmetric.key");
-        read_ds_msg("message.ds-msg");
-        aes_encrypt();
+        keyToUTF8("symmetric.key");
+        readDsMsg("message.ds-msg");
+        aesEncrypt();
 
     }
 
-    public static String sha_256(String message_file) throws Exception {
+    public static String sha256(String message_file) throws Exception {
 
         BufferedInputStream file = new BufferedInputStream(new FileInputStream(message_file));
         MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -71,7 +72,7 @@ public class Sender{
         return new String(hash);
     }
 
-    public static String string_to_byte(String fileName) throws IOException {
+    public static String stringToByte(String fileName) throws IOException {
 
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
@@ -84,20 +85,20 @@ public class Sender{
                 line = br.readLine();
             }
 
-            message_hash = sb.toString();
-            message_hash = message_hash.replaceAll("\\s+","");
+            messageHash = sb.toString();
+            messageHash = messageHash.replaceAll("\\s+","");
 
             // Convert Hex String to byte Array.
-            hash_byte = new byte[message_hash.length() / 2];
-            for (int i = 0; i < hash_byte.length; i++) {
+            hashByte = new byte[messageHash.length() / 2];
+            for (int i = 0; i < hashByte.length; i++) {
                 int index = i * 2;
-                int j = Integer.parseInt(message_hash.substring(index, index + 2), 16);
-                hash_byte[i] = (byte)j;
+                int j = Integer.parseInt(messageHash.substring(index, index + 2), 16);
+                hashByte[i] = (byte)j;
             }
 
-            System.out.println("byte[] hash_byte: (Read message.dd as a string and store as byte[].) ");
-            for (int i = 0; i < hash_byte.length; i++) {
-                System.out.format("%02X ", (hash_byte[i]));
+            System.out.println("byte[] hashByte: (Read message.dd as a string and store as byte[].) ");
+            for (int i = 0; i < hashByte.length; i++) {
+                System.out.format("%02X ", (hashByte[i]));
             }
             System.out.println();
             System.out.println();
@@ -135,7 +136,7 @@ public class Sender{
         }
     }
 
-    public static String key_to_UTF8(String fileName) throws IOException {
+    public static String keyToUTF8(String fileName) throws IOException {
         System.out.println("Symmetric.key string for AES En(): ");
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
@@ -162,38 +163,21 @@ public class Sender{
         }
     }
 
-    public static byte[] aes_encrypt() throws Exception {
-
-        String IV = "AAAAAAAAAAAAAAAA"; // do not need for AES/ECB/PKCS5Padding mode
-        //Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
-        //Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding", "SunJCE");
-        Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding", "SunJCE");
-        SecretKeySpec key = new SecretKeySpec(symmetricBytes, "AES");
-        cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
-        PrintWriter aes_out = new PrintWriter("message.aescipher");
-        byte[] AEScipher = cipher.doFinal(ds_msg.getBytes("UTF-8"));
-        System.out.print("AEScipher:  \n");
-        for (int i = 0, j = 0; i < AEScipher.length; i++, j++) {
-            System.out.format("%02X ", AEScipher[i]);
-            aes_out.format("%02X ", AEScipher[i]);
-            if (j >= 15) {
-                System.out.println("");
-                j = -1;
-            }
-        }
-        System.out.println();
-        aes_out.close();
-        return cipher.doFinal(ds_msg.getBytes("UTF-8"));
+    static byte[] trim(byte[] bytes) {
+        int i = bytes.length - 1;
+        while (i >= 0 && bytes[i] == 0)
+            --i;
+        return Arrays.copyOf(bytes, i );
     }
 
-    public static byte[] rsa_encrypt() throws Exception {
+    public static byte[] rsaEncrypt() throws Exception {
 
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         SecureRandom Xrandom = new SecureRandom();
         XprivKey2 = readPrivKeyFromFile("XPrivate.key");
         cipher.init(Cipher.ENCRYPT_MODE, XprivKey2, Xrandom);
         PrintWriter out = new PrintWriter("message.ds-msg");
-        byte[] cipherText = cipher.doFinal(hash_byte);
+        byte[] cipherText = cipher.doFinal(hashByte);
         System.out.println("RSA Encryption cipherText: block size = " + cipher.getBlockSize());
         for (int i = 0, j = 0; i < cipherText.length; i++, j++) {
             System.out.format("%02X ", (cipherText[i]));
@@ -218,10 +202,35 @@ public class Sender{
         System.out.println("");
         out.close(); // IT WONT SEND THE DATA WITHOUT THIS LINE
 
-        return cipher.doFinal(hash_byte);
+        return cipher.doFinal(hashByte);
     }
 
-    public static String read_ds_msg(String fileName) throws IOException {
+    public static byte[] aesEncrypt() throws Exception {
+
+        byte[] iv = new byte[16];
+        String IV = "AAAAAAAAAAAAAAAA"; // do not need for AES/ECB/PKCS5Padding mode
+        //Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
+        //Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding", "SunJCE");
+        Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding", "SunJCE");
+        SecretKeySpec key = new SecretKeySpec(symmetricBytes, "AES");
+        cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(iv));
+        PrintWriter aes_out = new PrintWriter("message.aescipher");
+        byte[] AEScipher = cipher.doFinal(dsMsg.getBytes("UTF-8"));
+        System.out.print("AEScipher:  \n");
+        for (int i = 0, j = 0; i < AEScipher.length; i++, j++) {
+            System.out.format("%02X ", AEScipher[i]);
+            aes_out.format("%02X ", AEScipher[i]);
+            if (j >= 15) {
+                System.out.println("");
+                j = -1;
+            }
+        }
+        System.out.println();
+        aes_out.close();
+        return cipher.doFinal(dsMsg.getBytes("UTF-8"));
+    }
+
+    public static String readDsMsg(String fileName) throws IOException {
 
         System.out.println("Read (RSA Cipertext || Message) string from message.ds-msg for AES Encryption: ");
         BufferedReader br = new BufferedReader(new FileReader(fileName));
@@ -234,8 +243,8 @@ public class Sender{
                 sb.append("\n");
                 line = br.readLine();
             }
-            ds_msg = sb.toString();
-            System.out.println(ds_msg);
+            dsMsg = sb.toString();
+            System.out.println(dsMsg);
             return sb.toString();
         } finally {
             br.close();
@@ -267,14 +276,5 @@ public class Sender{
         } finally {
             oin.close();
         }
-    }
-
-    static byte[] trim(byte[] bytes) {
-        int i = bytes.length - 1;
-        while (i >= 0 && bytes[i] == 0)
-        {
-            --i;
-        }
-        return Arrays.copyOf(bytes, i );
     }
 }
